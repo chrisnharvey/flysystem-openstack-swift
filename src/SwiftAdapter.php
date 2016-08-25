@@ -40,7 +40,7 @@ class SwiftAdapter extends AbstractAdapter
             'name'    => $path
         ];
 
-        $type = 'contents';
+        $type = 'content';
 
         if (is_a($contents, 'GuzzleHttp\Psr7\Stream')) {
             $type = 'stream';
