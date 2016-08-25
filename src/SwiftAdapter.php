@@ -120,9 +120,9 @@ class SwiftAdapter extends AbstractAdapter
     {
         $object = $this->getObject($path);
 
-        $response = $object->delete();
-
-        if ($response->getStatusCode() !== 204) {
+        try {
+            $object->delete();
+        } catch (BadResponseError $e) {
             return false;
         }
 
