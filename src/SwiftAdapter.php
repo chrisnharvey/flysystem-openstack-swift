@@ -163,9 +163,13 @@ class SwiftAdapter extends AbstractAdapter
     {
         try {
             $object = $this->getObject($path);
-        } catch ()
+        } catch (BadResponseError $e) {
+            $code = $e->getResponse()->getStatusCode();
 
-        if ( ! $object->hash) return false;
+            if ($code == 404) return false;
+
+            throw $e;
+        }
 
         return $this->normalizeObject($object);
     }
