@@ -146,8 +146,12 @@ class SwiftAdapter extends AbstractAdapter
             'prefix' => $location
         ]);
 
-        foreach ($objects as $object) {
-            $object->delete();
+        try {
+            foreach ($objects as $object) {
+                $object->delete();
+            }
+        } catch (BadResponseError $e) {
+            return false;
         }
 
         return true;
