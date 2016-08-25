@@ -86,12 +86,14 @@ class SwiftAdapter extends AbstractAdapter
         $newLocation = $this->applyPathPrefix($newpath);
         $destination = '/'.$this->container->name.'/'.ltrim($newLocation, '/');
 
-        $response = $object->copy(compact('destination'));
-
-        if ($response->getStatusCode() !== 201) {
+        try {
+            $response = $object->copy(compact('destination'));
+        } catch (BadResponseError $e) {
             return false;
         }
+
         $object->delete();
+
         return true;
     }
 
