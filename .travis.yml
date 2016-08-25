@@ -1,0 +1,15 @@
+language: php
+
+php:
+  - 7.0
+  - 7.1
+
+install:
+  - travis_retry composer update
+
+script:
+  - bin/phpunit --coverage-text --coverage-clover coverage.xml
+
+after_script:
+  - wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.xml
