@@ -9,9 +9,12 @@ use League\Flysystem\Adapter\AbstractAdapter;
 use OpenCloud\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\Object;
+use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 
 class SwiftAdapter extends AbstractAdapter
 {
+    use NotSupportingVisibilityTrait;
+
     /**
      * @var Container
      */
@@ -258,22 +261,6 @@ class SwiftAdapter extends AbstractAdapter
     public function getTimestamp($path)
     {
         return $this->getMetadata($path);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getVisibility($path)
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setVisibility($path, $visibility)
-    {
-        return true;
     }
 
     /**
