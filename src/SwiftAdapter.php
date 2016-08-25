@@ -11,9 +11,11 @@ use OpenCloud\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\Object;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
+use League\Flysystem\Adapter\Polyfill\StreamedCopyTrait;
 
 class SwiftAdapter extends AbstractAdapter
 {
+    use StreamedCopyTrait;
     use NotSupportingVisibilityTrait;
 
     /**
@@ -97,24 +99,6 @@ class SwiftAdapter extends AbstractAdapter
         }
 
         $object->delete();
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function copy($path, $newpath)
-    {
-        $object = $this->getObject($path);
-        $newLocation = $this->applyPathPrefix($newpath);
-        $destination = '/'.$this->container->name.'/'.ltrim($newLocation, '/');
-
-        try {
-            $response = $object->copy(compact('destination'));
-        } catch (BadMethodCallException $e) {
-            return false;
-        }
 
         return true;
     }
