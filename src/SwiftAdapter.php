@@ -181,7 +181,7 @@ class SwiftAdapter extends AbstractAdapter
     {
         $object = $this->getObject($path);
         $data = $this->normalizeObject($object);
-        $data['contents'] = (string) $object->content;
+        $data['contents'] = $object->download()->getContents();
 
         return $data;
     }
