@@ -43,7 +43,7 @@ class SwiftAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         $data = [
-            'name'    => $path
+            'name' => $path
         ];
 
         $type = 'content';
