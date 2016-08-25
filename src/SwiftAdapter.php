@@ -3,6 +3,7 @@
 namespace Harvey\Flysystem\OpenStack;
 
 use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Psr7\StreamWrapper;
 use League\Flysystem\Util;
 use League\Flysystem\Config;
 use League\Flysystem\Adapter\AbstractAdapter;
@@ -202,9 +203,7 @@ class SwiftAdapter extends AbstractAdapter
     {
        $object = $this->getObject($path);
        $data = $this->normalizeObject($object);
-       $responseBody = $object->content;
-       $data['stream'] = $responseBody->getStream();
-       $responseBody->detachStream();
+       $data['stream'] = StreamWrapper::getResource($object->download());
 
        return $data;
     }
