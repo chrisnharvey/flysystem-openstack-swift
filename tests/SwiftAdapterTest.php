@@ -51,11 +51,25 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->object->shouldReceive('delete')->once();
 
-        $this->container->shouldReceive('getObject')->with('hello')->andReturn(
-            $this->object
-        );
+        $this->container->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
 
         $this->adapter->rename('hello', 'world');
+    }
+
+    public function testDelete()
+    {
+        $this->object->shouldReceive('retrieve')->once();
+        $this->object->shouldReceive('delete')->once();
+
+        $this->container->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
+
+        $this->adapter->delete('hello');
     }
 
     public function tearDown()
