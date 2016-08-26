@@ -1,16 +1,20 @@
 {
-    "name": "chrisnharvey/flysystem-openstack-swift",
+    "name": "nimbusoft/flysystem-openstack-swift",
     "description": "Flysystem adapter for OpenStack Swift",
     "license": "MIT",
     "authors": [
         {
+            "name": "Nimbusoft Ltd",
+            "email": "support@nimbusoft.co.uk"
+        },
+        {
             "name": "Chris Harvey",
-            "email": "chris@chrisnharvey.com"
+            "email": "chris@nimbusoft.co.uk"
         }
     ],
     "autoload": {
         "psr-4": {
-            "Harvey\\Flysystem\\OpenStack\\": "src/"
+            "Nimbusoft\\Flysystem\\OpenStack\\": "src/"
         }
     },
     "require": {

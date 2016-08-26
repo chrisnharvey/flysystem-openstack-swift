@@ -1,6 +1,6 @@
 <?php
 
-namespace Harvey\Flysystem\OpenStack;
+namespace Nimbusoft\Flysystem\OpenStack;
 
 use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Psr7\StreamWrapper;

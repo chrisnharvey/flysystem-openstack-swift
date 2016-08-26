@@ -2,7 +2,7 @@
 
 use Mockery;
 use League\Flysystem\Config;
-use Harvey\Flysystem\OpenStack\SwiftAdapter;
+use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
 
 class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 {
