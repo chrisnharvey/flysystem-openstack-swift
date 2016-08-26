@@ -71,6 +71,30 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter->delete('hello');
     }
 
+    public function testDeleteDir()
+    {
+        $times = rand(1, 10);
+
+        $generator = function() use ($times) {
+            for ($i = 1; $i <= $times; $i++) {
+                yield $this->object;
+            }
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello'
+            ])
+            ->andReturn($objects);
+
+        $this->object->shouldReceive('delete')->times($times);
+
+        $this->adapter->deleteDir('hello');
+    }
+
     public function tearDown()
     {
         Mockery::close();
