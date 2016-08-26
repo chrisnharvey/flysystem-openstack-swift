@@ -10,6 +10,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $this->config = new Config([]);
         $this->container = Mockery::mock('OpenStack\ObjectStore\v1\Models\Container');
+        $this->container->name = 'container-name';
         $this->object = Mockery::mock('OpenStack\ObjectStore\v1\Models\Object');
         $this->adapter = new SwiftAdapter($this->container);
     }
@@ -43,8 +44,6 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 
     public function testRename()
     {
-        $this->container->name = 'container-name';
-
         $this->object->shouldReceive('retrieve')->once();
         $this->object->shouldReceive('copy')->once()->with([
             'destination' => '/container-name/world'
