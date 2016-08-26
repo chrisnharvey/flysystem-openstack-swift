@@ -17,7 +17,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
     public function testWriteAndUpdate()
     {
         foreach (['write', 'update'] as $method) {
-            $this->container->shouldReceive('createObject')->with([
+            $this->container->shouldReceive('createObject')->once()->with([
                 'name' => 'hello',
                 'content' => 'world'
             ])->andReturn($this->object);
@@ -32,7 +32,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
             $psrStream = new Stream($stream);
 
-            $this->container->shouldReceive('createObject')->with([
+            $this->container->shouldReceive('createObject')->once()->with([
                 'name' => 'hello',
                 'stream' => $psrStream
             ])->andReturn($this->object);
