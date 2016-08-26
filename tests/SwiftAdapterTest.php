@@ -126,6 +126,36 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         ]);
     }
 
+    public function testRead()
+    {
+        $stream = Mockery::mock('GuzzleHttp\Psr7\Stream');
+        $stream->shouldReceive('close');
+        $stream->shouldReceive('getContents')->once()->andReturn('hello world');
+
+        $this->object->shouldReceive('retrieve')->once();
+        $this->object->shouldReceive('download')
+            ->once()
+            ->andReturn($stream);
+
+        $this->container
+            ->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
+
+        $data = $this->adapter->read('hello');
+
+        $this->assertEquals($data, [
+            'type' => 'file',
+            'dirname' => null,
+            'path' => null,
+            'timestamp' =>  null,
+            'mimetype' => null,
+            'size' => null,
+            'contents' => 'hello world'
+        ]);
+    }
+
     public function tearDown()
     {
         Mockery::close();
