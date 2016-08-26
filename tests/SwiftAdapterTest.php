@@ -95,6 +95,15 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter->deleteDir('hello');
     }
 
+    public function testCreateDir()
+    {
+        $dir = $this->adapter->createDir('hello', $this->config);
+
+        $this->assertEquals($dir, [
+            'path' => 'hello'
+        ]);
+    }
+
     public function tearDown()
     {
         Mockery::close();
