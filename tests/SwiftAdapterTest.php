@@ -241,29 +241,38 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($data, $contents);
     }
 
-    public function testGetMetadata()
+    public function testMetadataMethods()
     {
-        $this->object->shouldReceive('retrieve')->once();
-        $this->object->name = 'hello/world';
-        $this->object->lastModified = date('Y-m-d');
-        $this->object->contentType = 'mimetype';
-        $this->object->contentLength = 1234;
+        $methods = [
+            'getMetadata',
+            'getSize',
+            'getMimetype',
+            'getTimestamp'
+        ];
 
-        $this->container
-            ->shouldReceive('getObject')
-            ->once()
-            ->with('hello')
-            ->andReturn($this->object);
+        foreach ($methods as $method) {
+            $this->object->shouldReceive('retrieve')->once();
+            $this->object->name = 'hello/world';
+            $this->object->lastModified = date('Y-m-d');
+            $this->object->contentType = 'mimetype';
+            $this->object->contentLength = 1234;
 
-        $metadata = $this->adapter->getMetadata('hello');
+            $this->container
+                ->shouldReceive('getObject')
+                ->once()
+                ->with('hello')
+                ->andReturn($this->object);
 
-        $this->assertEquals($metadata, [
-            'type' => 'file',
-            'dirname' => 'hello',
-            'path' => 'hello/world',
-            'timestamp' =>  strtotime(date('Y-m-d')),
-            'mimetype' => 'mimetype',
-            'size' => 1234,
-        ]);
+            $metadata = $this->adapter->$method('hello');
+
+            $this->assertEquals($metadata, [
+                'type' => 'file',
+                'dirname' => 'hello',
+                'path' => 'hello/world',
+                'timestamp' =>  strtotime(date('Y-m-d')),
+                'mimetype' => 'mimetype',
+                'size' => 1234,
+            ]);
+        }
     }
 }
