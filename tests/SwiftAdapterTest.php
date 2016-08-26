@@ -1,6 +1,5 @@
 <?php
 
-use Mockery;
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
@@ -40,6 +39,23 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 
             $this->adapter->$method('hello', $stream, $this->config);
         }
+    }
+
+    public function testRename()
+    {
+        $this->container->name = 'container-name';
+
+        $this->object->shouldReceive('retrieve')->once();
+        $this->object->shouldReceive('copy')->once()->with([
+            'destination' => '/container-name/world'
+        ]);
+        $this->object->shouldReceive('delete')->once();
+
+        $this->container->shouldReceive('getObject')->with('hello')->andReturn(
+            $this->object
+        );
+
+        $this->adapter->rename('hello', 'world');
     }
 
     public function tearDown()
