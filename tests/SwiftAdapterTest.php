@@ -1,6 +1,7 @@
 <?php
 
 use Mockery;
+use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
 
@@ -22,6 +23,19 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         ])->andReturn($this->object);
 
         $this->adapter->write('hello', 'world', $this->config);
+    }
+
+    public function testWriteStream()
+    {
+        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+        $psrStream = new Stream($stream);
+
+        $this->container->shouldReceive('createObject')->with([
+            'name' => 'hello',
+            'stream' => $psrStream
+        ])->andReturn($this->object);
+
+        $this->adapter->writeStream('hello', $stream, $this->config);
     }
 
     public function tearDown()
