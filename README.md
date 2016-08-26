@@ -1,4 +1,4 @@
-# Flysystem Adapter for Google Cloud Storage
+# Flysystem Adapter for OpenStack Swift
 
 [![Author](http://img.shields.io/badge/author-@chrisnharvey-blue.svg?style=flat-square)](https://twitter.com/chrisnharvey)
 [![Build Status](https://img.shields.io/travis/nimbusoftltd/flysystem-openstack-swift/master.svg?style=flat-square)](https://travis-ci.org/nimbusoftltd/flysystem-openstack-swift)
