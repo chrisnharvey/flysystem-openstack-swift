@@ -205,4 +205,40 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals('world', stream_get_contents($data['stream']));
     }
+
+    public function testListContents()
+    {
+        $times = rand(1, 10);
+
+        $generator = function() use ($times) {
+            for ($i = 1; $i <= $times; $i++) {
+                yield $this->object;
+            }
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello'
+            ])
+            ->andReturn($objects);
+
+        $contents = $this->adapter->listContents('hello');
+
+        for ($i = 1; $i <= $times; $i++) {
+            $data[] = [
+                'type' => 'file',
+                'dirname' => null,
+                'path' => null,
+                'timestamp' =>  null,
+                'mimetype' => null,
+                'size' => null,
+            ];
+        }
+
+        $this->assertEquals($data, $contents);
+    }
+
 }
