@@ -184,4 +184,25 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             'contents' => 'hello world'
         ]);
     }
+
+    public function testReadStream()
+    {
+        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+        $psrStream = new Stream($stream);
+
+        $this->object->shouldReceive('retrieve')->once();
+        $this->object->shouldReceive('download')
+            ->once()
+            ->andReturn($psrStream);
+
+        $this->container
+            ->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
+
+        $data = $this->adapter->readStream('hello');
+
+        $this->assertEquals('world', stream_get_contents($data['stream']));
+    }
 }
