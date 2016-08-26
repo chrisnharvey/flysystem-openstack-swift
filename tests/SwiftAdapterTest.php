@@ -23,7 +23,16 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
                 'content' => 'world'
             ])->andReturn($this->object);
 
-            $this->adapter->$method('hello', 'world', $this->config);
+            $response = $this->adapter->$method('hello', 'world', $this->config);
+
+            $this->assertEquals($response, [
+                'type' => 'file',
+                'dirname' => null,
+                'path' => null,
+                'timestamp' =>  null,
+                'mimetype' => null,
+                'size' => null,
+            ]);
         }
     }
 
@@ -38,7 +47,16 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
                 'stream' => $psrStream
             ])->andReturn($this->object);
 
-            $this->adapter->$method('hello', $stream, $this->config);
+            $response = $this->adapter->$method('hello', $stream, $this->config);
+
+            $this->assertEquals($response, [
+                'type' => 'file',
+                'dirname' => null,
+                'path' => null,
+                'timestamp' =>  null,
+                'mimetype' => null,
+                'size' => null,
+            ]);
         }
     }
 
@@ -55,7 +73,9 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             ->with('hello')
             ->andReturn($this->object);
 
-        $this->adapter->rename('hello', 'world');
+        $response = $this->adapter->rename('hello', 'world');
+
+        $this->assertTrue($response);
     }
 
     public function testDelete()
@@ -68,7 +88,9 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             ->with('hello')
             ->andReturn($this->object);
 
-        $this->adapter->delete('hello');
+        $response = $this->adapter->delete('hello');
+
+        $this->assertTrue($response);
     }
 
     public function testDeleteDir()
@@ -92,7 +114,9 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 
         $this->object->shouldReceive('delete')->times($times);
 
-        $this->adapter->deleteDir('hello');
+        $response = $this->adapter->deleteDir('hello');
+
+        $this->assertTrue($response);
     }
 
     public function testCreateDir()
