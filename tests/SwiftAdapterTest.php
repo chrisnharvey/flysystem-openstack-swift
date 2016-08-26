@@ -15,6 +15,11 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter = new SwiftAdapter($this->container);
     }
 
+    public function tearDown()
+    {
+        Mockery::close();
+    }
+
     public function testWriteAndUpdate()
     {
         foreach (['write', 'update'] as $method) {
@@ -178,10 +183,5 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             'size' => null,
             'contents' => 'hello world'
         ]);
-    }
-
-    public function tearDown()
-    {
-        Mockery::close();
     }
 }
