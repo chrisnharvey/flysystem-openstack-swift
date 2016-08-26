@@ -124,11 +124,8 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
-        $paths = [];
-        $prefix = '/'.$this->container->getName().'/';
-        $location = $this->applyPathPrefix($dirname);
         $objects = $this->container->listObjects([
-            'prefix' => $location
+            'prefix' => $this->applyPathPrefix($dirname)
         ]);
 
         try {
