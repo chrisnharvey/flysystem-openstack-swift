@@ -15,27 +15,31 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter = new SwiftAdapter($this->container);
     }
 
-    public function testWrite()
+    public function testWriteAndUpdate()
     {
-        $this->container->shouldReceive('createObject')->with([
-            'name' => 'hello',
-            'content' => 'world'
-        ])->andReturn($this->object);
+        foreach (['write', 'update'] as $method) {
+            $this->container->shouldReceive('createObject')->with([
+                'name' => 'hello',
+                'content' => 'world'
+            ])->andReturn($this->object);
 
-        $this->adapter->write('hello', 'world', $this->config);
+            $this->adapter->$method('hello', 'world', $this->config);
+        }
     }
 
-    public function testWriteStream()
+    public function testWriteAndUpdateStream()
     {
-        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
-        $psrStream = new Stream($stream);
+        foreach (['writeStream', 'updateStream'] as $method) {
+            $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+            $psrStream = new Stream($stream);
 
-        $this->container->shouldReceive('createObject')->with([
-            'name' => 'hello',
-            'stream' => $psrStream
-        ])->andReturn($this->object);
+            $this->container->shouldReceive('createObject')->with([
+                'name' => 'hello',
+                'stream' => $psrStream
+            ])->andReturn($this->object);
 
-        $this->adapter->writeStream('hello', $stream, $this->config);
+            $this->adapter->$method('hello', $stream, $this->config);
+        }
     }
 
     public function tearDown()
