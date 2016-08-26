@@ -13,3 +13,23 @@ Flysystem adapter for OpenStack Swift.
 ```bash
 composer require nimbusoft/flysystem-openstack-swift
 ```
+## Usage
+
+```php
+$openstack = new OpenStack\OpenStack([
+    'authUrl' => '{authUrl}',
+    'region'  => '{region}',
+    'user'    => [
+        'id'       => '{userId}',
+        'password' => '{password}'
+    ],
+    'scope'   => ['project' => ['id' => '{projectId}']]
+]);
+
+$container = $openstack->objectStoreV1()
+    ->getContainer('{containerName}');
+
+$adapter = new Nimbusoft\Flysystem\OpenStack\SwiftAdapter($container);
+
+$flysystem = new League\Flysystem\Filesystem($adapter);
+```
