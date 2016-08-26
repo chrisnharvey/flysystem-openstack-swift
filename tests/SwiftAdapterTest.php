@@ -104,6 +104,28 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         ]);
     }
 
+    public function testHas()
+    {
+        $this->object->shouldReceive('retrieve')->once();
+
+        $this->container
+            ->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
+
+        $has = $this->adapter->has('hello');
+
+        $this->assertEquals($has, [
+            'type' => 'file',
+            'dirname' => null,
+            'path' => null,
+            'timestamp' =>  null,
+            'mimetype' => null,
+            'size' => null,
+        ]);
+    }
+
     public function tearDown()
     {
         Mockery::close();
