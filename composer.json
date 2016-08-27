@@ -2,8 +2,8 @@
     "name": "nimbusoft/flysystem-openstack-swift",
     "description": "Flysystem adapter for OpenStack Swift",
     "keywords": [
-        "filesystem", "filesystems", "files", "storage",
-        "flysystem", "openstack", "opencloud", "swift"
+        "filesystem", "filesystems", "files", "chrisnharvey",
+        "storage", "flysystem", "openstack", "opencloud", "swift"
     ],
     "license": "MIT",
     "authors": [
