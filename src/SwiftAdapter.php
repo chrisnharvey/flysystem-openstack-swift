@@ -7,7 +7,7 @@ use GuzzleHttp\Psr7\StreamWrapper;
 use League\Flysystem\Util;
 use League\Flysystem\Config;
 use League\Flysystem\Adapter\AbstractAdapter;
-use OpenCloud\Common\Error\BadResponseError;
+use OpenStack\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\Object;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
