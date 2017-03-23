@@ -58,10 +58,10 @@ class SwiftAdapter extends AbstractAdapter
         $metadata = $this->getSize($path);
         if ($metadata && isset($metadata['size']) && $metadata['size'] > 3221225472) {
             // optional: specify the size of each segment in bytes - 1GB
-            $options['segmentSize'] = 1073741824;
+            $data['segmentSize'] = 1073741824;
             // optional: specify the container where the segments live. This does not necessarily have to be the
             // same as the container which holds the manifest file
-            $options['segmentContainer'] = $this->container->name;
+            $data['segmentContainer'] = $this->container->name;
 
             $response = $this->container->createLargeObject($data);
         } else {
