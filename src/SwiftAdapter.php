@@ -130,6 +130,7 @@ class SwiftAdapter extends AbstractAdapter
 
         try {
             foreach ($objects as $object) {
+                $object->containerName = $this->container->name;
                 $object->delete();
             }
         } catch (BadResponseError $e) {
