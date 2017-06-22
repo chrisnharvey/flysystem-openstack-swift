@@ -172,7 +172,10 @@ class SwiftAdapter extends AbstractAdapter
     {
         $object = $this->getObject($path);
         $data = $this->normalizeObject($object);
-        $data['contents'] = $object->download()->getContents();
+
+        $stream = $object->download();
+        $stream->rewind();
+        $data['contents'] = $stream->getContents();
 
         return $data;
     }
@@ -184,7 +187,10 @@ class SwiftAdapter extends AbstractAdapter
     {
        $object = $this->getObject($path);
        $data = $this->normalizeObject($object);
-       $data['stream'] = StreamWrapper::getResource($object->download());
+
+       $stream = $object->download();
+       $stream->rewind();
+       $data['stream'] = StreamWrapper::getResource($stream);
 
        return $data;
     }
