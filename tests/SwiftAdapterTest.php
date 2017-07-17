@@ -159,6 +159,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $stream = Mockery::mock('GuzzleHttp\Psr7\Stream');
         $stream->shouldReceive('close');
+        $stream->shouldReceive('rewind');
         $stream->shouldReceive('getContents')->once()->andReturn('hello world');
 
         $this->object->shouldReceive('retrieve')->once();
