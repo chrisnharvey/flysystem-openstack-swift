@@ -2,6 +2,8 @@
 
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
+use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\content\LargeFileContent;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
 
 class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
@@ -13,6 +15,8 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->container->name = 'container-name';
         $this->object = Mockery::mock('OpenStack\ObjectStore\v1\Models\Object');
         $this->adapter = new SwiftAdapter($this->container);
+        // for testing the large object support
+        $this->root = vfsStream::setUp('home');
     }
 
     public function tearDown()
@@ -50,6 +54,38 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             $this->container->shouldReceive('createObject')->once()->with([
                 'name' => 'hello',
                 'stream' => $psrStream
+            ])->andReturn($this->object);
+
+            $response = $this->adapter->$method('hello', $stream, $this->config);
+
+            $this->assertEquals($response, [
+                'type' => 'file',
+                'dirname' => null,
+                'path' => null,
+                'timestamp' =>  null,
+                'mimetype' => null,
+                'size' => null,
+            ]);
+        }
+    }
+    
+    public function testWriteAndUpdateLargeStream()
+    {
+        foreach (['writeStream', 'updateStream'] as $method) {
+            // create a large file
+            $file = vfsStream::newFile('large.txt')
+                              ->withContent(LargeFileContent::withMegabytes(400))
+                              ->at($this->root);
+
+            $stream = fopen(vfsStream::url('home/large.txt'), 'r');
+
+            $psrStream = new Stream($stream);
+
+            $this->container->shouldReceive('createLargeObject')->once()->with([
+                'name' => 'hello',
+                'stream' => $psrStream,
+                'segmentSize' => 104857600,
+                'segmentContainer' => $this->container->name,
             ])->andReturn($this->object);
 
             $response = $this->adapter->$method('hello', $stream, $this->config);
