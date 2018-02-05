@@ -9,7 +9,7 @@ use League\Flysystem\Config;
 use League\Flysystem\Adapter\AbstractAdapter;
 use OpenStack\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
-use OpenStack\ObjectStore\v1\Models\Object;
+use OpenStack\ObjectStore\v1\Models\StorageObject;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\Adapter\Polyfill\StreamedCopyTrait;
 
@@ -257,7 +257,7 @@ class SwiftAdapter extends AbstractAdapter
      *
      * @param string $path
      *
-     * @return Object
+     * @return StorageObject
      */
     protected function getObject($path)
     {
@@ -270,12 +270,12 @@ class SwiftAdapter extends AbstractAdapter
     }
 
     /**
-     * Normalize Openstack "Object" object into an array
+     * Normalize Openstack "StorageObject" object into an array
      *
-     * @param Object $object
+     * @param StorageObject $object
      * @return array
      */
-    protected function normalizeObject(Object $object)
+    protected function normalizeObject(StorageObject $object)
     {
         $name = $this->removePathPrefix($object->name);
         $mimetype = explode('; ', $object->contentType);
