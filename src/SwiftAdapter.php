@@ -280,11 +280,17 @@ class SwiftAdapter extends AbstractAdapter
         $name = $this->removePathPrefix($object->name);
         $mimetype = explode('; ', $object->contentType);
 
+        if ($object->lastModified instanceof \DateTimeInterface) {
+            $timestamp = $object->lastModified->getTimestamp();
+        } else {
+            $timestamp = strtotime($object->lastModified);
+        }
+
         return [
             'type'      => 'file',
             'dirname'   => Util::dirname($name),
             'path'      => $name,
-            'timestamp' => strtotime($object->lastModified),
+            'timestamp' => $timestamp,
             'mimetype'  => reset($mimetype),
             'size'      => $object->contentLength,
         ];

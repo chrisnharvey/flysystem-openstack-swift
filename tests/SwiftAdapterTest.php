@@ -68,7 +68,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
             ]);
         }
     }
-    
+
     public function testWriteAndUpdateLargeStream()
     {
         foreach (['writeStream', 'updateStream'] as $method) {
@@ -311,5 +311,22 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
                 'size' => 1234,
             ]);
         }
+    }
+
+    public function testGetTimestampDateTimeImmutable()
+    {
+        $time = new \DateTimeImmutable(date('Y-m-d'));
+        $this->object->shouldReceive('retrieve')->once();
+        $this->object->lastModified = $time;
+
+        $this->container
+            ->shouldReceive('getObject')
+            ->once()
+            ->with('hello')
+            ->andReturn($this->object);
+
+        $metadata = $this->adapter->getTimestamp('hello');
+
+        $this->assertEquals($time->getTimestamp(), $metadata['timestamp']);
     }
 }
