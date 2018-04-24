@@ -114,7 +114,7 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function delete($path)
     {
-        $object = $this->getObject($path);
+        $object = $this->getObjectInstance($path);
 
         try {
             $object->delete();
@@ -253,7 +253,23 @@ class SwiftAdapter extends AbstractAdapter
     }
 
     /**
-     * Get an object.
+     * Get an object instance.
+     *
+     * @param string $path
+     *
+     * @return StorageObject
+     */
+    protected function getObjectInstance($path)
+    {
+        $location = $this->applyPathPrefix($path);
+
+        $object = $this->container->getObject($location);
+
+        return $object;
+    }
+
+    /**
+     * Get an object instance and retrieve its metadata from storage.
      *
      * @param string $path
      *
@@ -261,9 +277,7 @@ class SwiftAdapter extends AbstractAdapter
      */
     protected function getObject($path)
     {
-        $location = $this->applyPathPrefix($path);
-
-        $object = $this->container->getObject($location);
+        $object = $this->getObjectInstance($path);
         $object->retrieve();
 
         return $object;
