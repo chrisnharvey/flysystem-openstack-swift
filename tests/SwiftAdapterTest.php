@@ -3,6 +3,7 @@
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
 use org\bovigo\vfs\vfsStream;
+use OpenStack\Common\Error\BadResponseError;
 use org\bovigo\vfs\content\LargeFileContent;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
 
@@ -121,7 +122,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
 
     public function testDelete()
     {
-        $this->object->shouldReceive('retrieve')->once();
+        $this->object->shouldNotReceive('retrieve');
         $this->object->shouldReceive('delete')->once();
 
         $this->container->shouldReceive('getObject')
