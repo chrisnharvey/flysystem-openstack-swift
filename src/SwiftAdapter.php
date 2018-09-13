@@ -51,11 +51,12 @@ class SwiftAdapter extends AbstractAdapter
 
         $data[$type] = $contents;
 
-        if ($type === 'stream' && $size > 314572800) {
-            // set the segment size to 100MB
-            // as suggested in OVH docs
-            $data['segmentSize'] = 104857600;
-            $data['segmentContainer'] = $this->container->name;
+        // Create large object if the stream is larger than 300 MiB (default).
+        if ($type === 'stream' && $size > $config->get('swiftLargeObjectThreshold', 314572800)) {
+            // Set the segment size to 100 MiB by default as suggested in OVH docs.
+            $data['segmentSize'] = $config->get('swiftSegmentSize', 104857600);
+            // Set segment container to the same container by default.
+            $data['segmentContainer'] = $config->get('swiftSegmentContainer', $this->container->name);
 
             $response = $this->container->createLargeObject($data);
         } else {
