@@ -102,6 +102,33 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function testWriteAndUpdateLargeStreamConfig()
+    {
+        $this->config->set('swiftLargeObjectThreshold', 104857600); // 100 MiB
+        $this->config->set('swiftSegmentSize', 52428800); // 50 MiB
+        $this->config->set('swiftSegmentContainer', 'segmentContainer');
+
+        foreach (['writeStream', 'updateStream'] as $method) {
+            // create a large file
+            $file = vfsStream::newFile('large.txt')
+                              ->withContent(LargeFileContent::withMegabytes(200))
+                              ->at($this->root);
+
+            $stream = fopen(vfsStream::url('home/large.txt'), 'r');
+
+            $psrStream = new Stream($stream);
+
+            $this->container->shouldReceive('createLargeObject')->once()->with([
+                'name' => 'hello',
+                'stream' => $psrStream,
+                'segmentSize' => 52428800, // 50 MiB
+                'segmentContainer' => 'segmentContainer',
+            ])->andReturn($this->object);
+
+            $response = $this->adapter->$method('hello', $stream, $this->config);
+        }
+    }
+
     public function testRename()
     {
         $this->object->shouldReceive('retrieve')->once();
