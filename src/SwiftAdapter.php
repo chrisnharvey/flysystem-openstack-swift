@@ -42,7 +42,7 @@ class SwiftAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        $data = $this->getData();
+        $data = $this->getData($path);
         $type = 'content';
 
         if (is_a($contents, 'GuzzleHttp\Psr7\Stream')) {
@@ -256,9 +256,11 @@ class SwiftAdapter extends AbstractAdapter
     /**
      * Get data properties of object
      *
+     * @param string $path
+     *
      * @return array
      */
-    protected function getData()
+    protected function getData($path)
     {
         return ['name' => $path];
     }
