@@ -8,12 +8,8 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Nimbusoft Ltd",
-            "email": "support@nimbusoft.co.uk"
-        },
-        {
             "name": "Chris Harvey",
-            "email": "chris@nimbusoft.co.uk"
+            "email": "chris@chrisnharvey.com"
         }
     ],
     "autoload": {
