@@ -42,7 +42,7 @@ class SwiftAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        $data = $this->getWriteData($path);
+        $data = $this->getWriteData($path, $config);
         $type = 'content';
 
         if (is_a($contents, 'GuzzleHttp\Psr7\Stream')) {
@@ -257,10 +257,11 @@ class SwiftAdapter extends AbstractAdapter
      * Get the data properties to write or update an object.
      *
      * @param string $path
+     * @param Config $config
      *
      * @return array
      */
-    protected function getWriteData($path)
+    protected function getWriteData($path, $config)
     {
         return ['name' => $path];
     }
