@@ -71,7 +71,7 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function writeStream($path, $resource, Config $config)
     {
-        return $this->write($path, new Stream($resource), $config, fstat($resource)['size']);
+        return $this->write($path, new Stream($resource), $config, Util::getStreamSize($resource));
     }
 
     /**
@@ -87,7 +87,7 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function updateStream($path, $resource, Config $config)
     {
-        return $this->write($path, new Stream($resource), $config, fstat($resource)['size']);
+        return $this->write($path, new Stream($resource), $config, Util::getStreamSize($resource));
     }
 
     /**
