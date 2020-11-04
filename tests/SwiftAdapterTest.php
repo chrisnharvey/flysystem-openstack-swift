@@ -3,13 +3,13 @@
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
 use org\bovigo\vfs\vfsStream;
-use OpenStack\Common\Error\BadResponseError;
 use org\bovigo\vfs\content\LargeFileContent;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
+use PHPUnit\Framework\TestCase;
 
-class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
+class SwiftAdapterTest extends TestCase
 {
-    public function setUp()
+    protected function setUp()
     {
         $this->config = new Config([]);
         $this->container = Mockery::mock('OpenStack\ObjectStore\v1\Models\Container');
@@ -20,7 +20,7 @@ class SwiftAdapterTest extends \PHPUnit_Framework_TestCase
         $this->root = vfsStream::setUp('home');
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
         Mockery::close();
     }
