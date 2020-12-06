@@ -131,6 +131,14 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
+        // Make sure a slash is added to the end.
+        $dirname = rtrim(trim($dirname), '/') . '/';
+
+        // To be safe, don't delete everything.
+        if($dirname === '/') {
+            return false;
+        }
+
         $objects = $this->container->listObjects([
             'prefix' => $this->applyPathPrefix($dirname)
         ]);

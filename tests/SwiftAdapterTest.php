@@ -177,7 +177,7 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('listObjects')
             ->once()
             ->with([
-                'prefix' => 'hello'
+                'prefix' => 'hello/'
             ])
             ->andReturn($objects);
 
