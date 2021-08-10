@@ -1,146 +1,103 @@
 <?php
 
+/**
+ * For the full copyright and license information, please view
+ * the LICENSE file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
 namespace Nimbusoft\Flysystem\OpenStack;
 
-use GuzzleHttp\Psr7\Stream;
+use DateTimeInterface;
 use GuzzleHttp\Psr7\StreamWrapper;
-use League\Flysystem\Util;
+use InvalidArgumentException;
 use League\Flysystem\Config;
-use League\Flysystem\Adapter\AbstractAdapter;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\PathPrefixer;
+use League\Flysystem\UnableToCheckFileExistence;
+use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToDeleteDirectory;
+use League\Flysystem\UnableToDeleteFile;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UnableToSetVisibility;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
+use League\Flysystem\UnixVisibility\VisibilityConverter;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
+use League\MimeTypeDetection\MimeTypeDetector;
 use OpenStack\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\StorageObject;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
-use League\Flysystem\Adapter\Polyfill\StreamedCopyTrait;
+use Psr\Http\Message\StreamFactoryInterface;
+use Throwable;
 
-class SwiftAdapter extends AbstractAdapter
+use function is_resource;
+
+final class SwiftAdapter implements FilesystemAdapter
 {
-    use StreamedCopyTrait;
-    use NotSupportingVisibilityTrait;
+    private Container $container;
 
-    /**
-     * @var Container
-     */
-    protected $container;
+    private PathPrefixer $prefixer;
 
-    /**
-     * Constructor
-     *
-     * @param Container $container
-     * @param string    $prefix
-     */
-    public function __construct(Container $container, $prefix = null)
-    {
-        $this->setPathPrefix($prefix);
+    private StreamFactoryInterface $streamFactory;
+
+    public function __construct(
+        Container $container,
+        StreamFactoryInterface $streamFactory,
+        string $prefix = '',
+        ?VisibilityConverter $visibility = null,
+        ?MimeTypeDetector $mimeTypeDetector = null
+    ) {
         $this->container = $container;
+        $this->streamFactory = $streamFactory;
+        $this->prefixer = new PathPrefixer($prefix);
+        $this->visibility = $visibility ?: new PortableVisibilityConverter();
+        $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function write($path, $contents, Config $config, $size = 0)
+    public function copy(string $source, string $destination, Config $config): void
     {
-        $path = $this->applyPathPrefix($path);
+        $stream = $this->readStream($source);
 
-        $data = $this->getWriteData($path, $config);
-        $type = 'content';
-
-        if (is_a($contents, 'GuzzleHttp\Psr7\Stream')) {
-            $type = 'stream';
+        if (false === is_resource($stream)) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination);
         }
 
-        $data[$type] = $contents;
+        $this->writeStream($destination, $stream, $config);
 
-        // Create large object if the stream is larger than 300 MiB (default).
-        if ($type === 'stream' && $size > $config->get('swiftLargeObjectThreshold', 314572800)) {
-            // Set the segment size to 100 MiB by default as suggested in OVH docs.
-            $data['segmentSize'] = $config->get('swiftSegmentSize', 104857600);
-            // Set segment container to the same container by default.
-            $data['segmentContainer'] = $config->get('swiftSegmentContainer', $this->container->name);
-
-            $response = $this->container->createLargeObject($data);
-        } else {
-            $response = $this->container->createObject($data);
-        }
-
-        return $this->normalizeObject($response);
+        fclose($stream);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function writeStream($path, $resource, Config $config)
+    public function createDirectory(string $path, Config $config): void
     {
-        return $this->write($path, new Stream($resource), $config, Util::getStreamSize($resource));
+        // TODO
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function update($path, $contents, Config $config)
-    {
-        return $this->write($path, $contents, $config);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function updateStream($path, $resource, Config $config)
-    {
-        return $this->write($path, new Stream($resource), $config, Util::getStreamSize($resource));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function rename($path, $newpath)
-    {
-        $object = $this->getObject($path);
-        $newLocation = $this->applyPathPrefix($newpath);
-        $destination = '/'.$this->container->name.'/'.ltrim($newLocation, '/');
-
-        try {
-            $response = $object->copy(compact('destination'));
-        } catch (BadResponseError $e) {
-            return false;
-        }
-
-        $object->delete();
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function delete($path)
+    public function delete(string $path): void
     {
         $object = $this->getObjectInstance($path);
 
         try {
             $object->delete();
         } catch (BadResponseError $e) {
-            return false;
+            throw UnableToDeleteFile::atLocation($path, '', $e);
         }
-
-        return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function deleteDir($dirname)
+    public function deleteDirectory(string $path): void
     {
         // Make sure a slash is added to the end.
-        $dirname = rtrim(trim($dirname), '/') . '/';
+        $path = rtrim(trim($path), '/') . '/';
 
         // To be safe, don't delete everything.
-        if($dirname === '/') {
-            return false;
+        if ('/' === $path) {
+            return;
         }
 
         $objects = $this->container->listObjects([
-            'prefix' => $this->applyPathPrefix($dirname)
+            'prefix' => $this->prefixer->prefixPath($path),
         ]);
 
         try {
@@ -149,155 +106,125 @@ class SwiftAdapter extends AbstractAdapter
                 $object->delete();
             }
         } catch (BadResponseError $e) {
-            return false;
+            throw UnableToDeleteDirectory::atLocation($path, '', $e);
         }
-
-        return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function createDir($dirname, Config $config)
-    {
-        return ['path' => $dirname];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function has($path)
+    public function fileExists(string $path): bool
     {
         try {
-            $object = $this->getObject($path);
-        } catch (BadResponseError $e) {
-            $code = $e->getResponse()->getStatusCode();
-
-            if ($code == 404) return false;
-
-            throw $e;
+            return $this->container->objectExists($this->prefixer->prefixPath($path));
+        } catch (Throwable $exception) {
+            throw UnableToCheckFileExistence::forLocation($path, $exception);
         }
-
-        return $this->normalizeObject($object);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function read($path)
+    public function fileSize(string $path): FileAttributes
+    {
+        return $this->getMetadata($path);
+    }
+
+    public function lastModified(string $path): FileAttributes
+    {
+        return $this->getMetadata($path);
+    }
+
+    public function listContents(string $path, bool $deep): iterable
+    {
+        $location = $this->prefixer->prefixPath($path);
+
+        $objectList = $this->container->listObjects([
+            'prefix' => $location,
+        ]);
+
+        foreach ($objectList as $object) {
+            yield $this->normalizeObject($object);
+        }
+    }
+
+    public function mimeType(string $path): FileAttributes
+    {
+        return $this->getMetadata($path);
+    }
+
+    public function move(string $source, string $destination, Config $config): void
+    {
+        $object = $this->getObject($source);
+        $newLocation = $this->prefixer->prefixPath($destination);
+        $destination = '/' . $this->container->name . '/' . ltrim($newLocation, '/');
+
+        try {
+            $object->copy(compact('destination'));
+        } catch (BadResponseError $e) {
+            throw UnableToMoveFile::fromLocationTo($source, $destination, $e);
+        }
+
+        $object->delete();
+    }
+
+    public function read(string $path): string
     {
         $object = $this->getObject($path);
-        $data = $this->normalizeObject($object);
 
         $stream = $object->download();
         $stream->rewind();
-        $data['contents'] = $stream->getContents();
 
-        return $data;
+        return $stream->getContents();
     }
 
-    /**
-    * {@inheritdoc}
-    */
-    public function readStream($path)
-    {
-       $object = $this->getObject($path);
-       $data = $this->normalizeObject($object);
-
-       $stream = $object->download();
-       $stream->rewind();
-       $data['stream'] = StreamWrapper::getResource($stream);
-
-       return $data;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listContents($directory = '', $recursive = false)
-    {
-        $location = $this->applyPathPrefix($directory);
-
-        $objectList = $this->container->listObjects([
-            'prefix' => $directory
-        ]);
-
-        $response = iterator_to_array($objectList);
-
-        return Util::emulateDirectories(array_map([$this, 'normalizeObject'], $response));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMetadata($path)
+    public function readStream(string $path)
     {
         $object = $this->getObject($path);
 
-        return $this->normalizeObject($object);
+        $stream = $object->download();
+        $stream->rewind();
+
+        return StreamWrapper::getResource($stream);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getSize($path)
+    public function setVisibility(string $path, string $visibility): void
     {
-        return $this->getMetadata($path);
+        throw UnableToSetVisibility::atLocation($path);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getMimetype($path)
+    public function visibility(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        throw UnableToRetrieveMetadata::visibility($path);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getTimestamp($path)
+    public function write(string $path, string $contents, Config $config): void
     {
-        return $this->getMetadata($path);
+        $this
+            ->container
+            ->createObject(
+                $this->getWriteData($this->prefixer->prefixPath($path), $config) + ['content' => $contents]
+            );
     }
 
-    /**
-     * Get the data properties to write or update an object.
-     *
-     * @param string $path
-     * @param Config $config
-     *
-     * @return array
-     */
-    protected function getWriteData($path, $config)
+    public function writeStream($path, $contents, Config $config): void
     {
-        return ['name' => $path];
+        if (!is_resource($contents)) {
+            throw new InvalidArgumentException('The $contents parameter must be a resource.');
+        }
+
+        $data = $this->getWriteData($this->prefixer->prefixPath($path), $config) +
+            ['stream' => $this->streamFactory->createStreamFromResource($contents)];
+        $data['segmentSize'] = $config->get('swiftSegmentSize', 104857600);
+        $data['segmentContainer'] = $config->get('swiftSegmentContainer', $this->container->name);
+
+        $this
+            ->container
+            ->createLargeObject(
+                $data
+            );
     }
 
-    /**
-     * Get an object instance.
-     *
-     * @param string $path
-     *
-     * @return StorageObject
-     */
-    protected function getObjectInstance($path)
+    private function getMetadata(string $path): FileAttributes
     {
-        $location = $this->applyPathPrefix($path);
-
-        $object = $this->container->getObject($location);
-
-        return $object;
+        return $this->normalizeObject($this->getObject($path));
     }
 
-    /**
-     * Get an object instance and retrieve its metadata from storage.
-     *
-     * @param string $path
-     *
-     * @return StorageObject
-     */
-    protected function getObject($path)
+    private function getObject(string $path): StorageObject
     {
         $object = $this->getObjectInstance($path);
         $object->retrieve();
@@ -305,30 +232,38 @@ class SwiftAdapter extends AbstractAdapter
         return $object;
     }
 
-    /**
-     * Normalize Openstack "StorageObject" object into an array
-     *
-     * @param StorageObject $object
-     * @return array
-     */
-    protected function normalizeObject(StorageObject $object)
+    private function getObjectInstance(string $path): StorageObject
     {
-        $name = $this->removePathPrefix($object->name);
-        $mimetype = explode('; ', $object->contentType);
+        $location = $this->prefixer->prefixPath($path);
 
-        if ($object->lastModified instanceof \DateTimeInterface) {
+        return $this->container->getObject($location);
+    }
+
+    private function getWriteData(string $path, Config $config): array
+    {
+        return ['name' => $path];
+    }
+
+    private function normalizeObject(StorageObject $object): FileAttributes
+    {
+        $name = $this->prefixer->stripPrefix($object->name);
+
+        if ($object->lastModified instanceof DateTimeInterface) {
             $timestamp = $object->lastModified->getTimestamp();
         } else {
-            $timestamp = strtotime($object->lastModified);
+            $timestamp = $object->lastModified;
         }
 
-        return [
-            'type'      => 'file',
-            'dirname'   => Util::dirname($name),
-            'path'      => $name,
-            'timestamp' => $timestamp,
-            'mimetype'  => reset($mimetype),
-            'size'      => $object->contentLength,
-        ];
+        return new FileAttributes(
+            $name,
+            (int) $object->contentLength,
+            null,
+            (int) $timestamp,
+            $object->contentType,
+            [
+                'type' => 'file',
+                'dirname' => $this->prefixer->prefixPath($object->name),
+            ]
+        );
     }
 }
