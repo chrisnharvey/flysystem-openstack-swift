@@ -2,8 +2,15 @@
     "name": "nimbusoft/flysystem-openstack-swift",
     "description": "Flysystem adapter for OpenStack Swift",
     "keywords": [
-        "filesystem", "filesystems", "files", "chrisnharvey",
-        "storage", "flysystem", "openstack", "opencloud", "swift"
+        "filesystem",
+        "filesystems",
+        "files",
+        "chrisnharvey",
+        "storage",
+        "flysystem",
+        "openstack",
+        "opencloud",
+        "swift"
     ],
     "license": "MIT",
     "authors": [
@@ -12,18 +19,26 @@
             "email": "chris@chrisnharvey.com"
         }
     ],
+    "require": {
+        "php": ">= 7.4",
+        "league/flysystem": "^2.0",
+        "php-opencloud/openstack": "^3.2",
+        "psr/http-factory": "^1.0",
+        "guzzlehttp/psr7": "^2.0"
+    },
+    "require-dev": {
+        "drupol/php-conventions": "^5",
+        "mikey179/vfsstream": ">= 1.6.4",
+        "mockery/mockery": ">= 1.3.1",
+        "nyholm/psr7": "^1.4",
+        "phpunit/phpunit": ">= 5.5"
+    },
+    "suggest": {
+        "nyholm/psr7": "A fast PHP7 implementation of PSR-7."
+    },
     "autoload": {
         "psr-4": {
             "Nimbusoft\\Flysystem\\OpenStack\\": "src/"
         }
-    },
-    "require": {
-        "php-opencloud/openstack": "^3.0",
-        "league/flysystem": "^1.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^5.5",
-        "mockery/mockery": "^1.3.1",
-        "mikey179/vfsstream": "^1.6.4"
     }
 }
