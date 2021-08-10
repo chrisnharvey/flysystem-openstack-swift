@@ -1,0 +1,9 @@
+imports:
+    - { resource: vendor/drupol/php-conventions/config/php73/grumphp.yml }
+
+parameters:
+    # GrumPHP License
+    tasks.license.holder: Chris Harvey
+    tasks.license.date_from: 2016
+    extra_tasks:
+        phpunit: ~
