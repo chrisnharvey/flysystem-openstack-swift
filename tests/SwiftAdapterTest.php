@@ -2,14 +2,17 @@
 
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
-use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\content\LargeFileContent;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
+use org\bovigo\vfs\content\LargeFileContent;
+use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
 class SwiftAdapterTest extends TestCase
 {
-    protected function setUp()
+    use MockeryPHPUnitIntegration;
+
+    protected function setUp(): void
     {
         $this->config = new Config([]);
         $this->container = Mockery::mock('OpenStack\ObjectStore\v1\Models\Container');
@@ -20,7 +23,7 @@ class SwiftAdapterTest extends TestCase
         $this->root = vfsStream::setUp('home');
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         Mockery::close();
     }
