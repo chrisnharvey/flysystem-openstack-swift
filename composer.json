@@ -18,7 +18,7 @@
         }
     },
     "require": {
-        "php-opencloud/openstack": "^3.0",
+        "php-opencloud/openstack": "^3.0 | ^3.2",
         "league/flysystem": "^1.0"
     },
     "require-dev": {
