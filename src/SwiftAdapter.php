@@ -4,16 +4,17 @@ namespace Nimbusoft\Flysystem\OpenStack;
 
 use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Psr7\StreamWrapper;
-use League\Flysystem\Util;
-use League\Flysystem\Config;
 use League\Flysystem\Adapter\AbstractAdapter;
+use League\Flysystem\Adapter\CanOverwriteFiles;
+use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
+use League\Flysystem\Adapter\Polyfill\StreamedCopyTrait;
+use League\Flysystem\Config;
+use League\Flysystem\Util;
 use OpenStack\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\StorageObject;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
-use League\Flysystem\Adapter\Polyfill\StreamedCopyTrait;
 
-class SwiftAdapter extends AbstractAdapter
+class SwiftAdapter extends AbstractAdapter implements CanOverwriteFiles
 {
     use StreamedCopyTrait;
     use NotSupportingVisibilityTrait;
@@ -87,7 +88,7 @@ class SwiftAdapter extends AbstractAdapter
      */
     public function updateStream($path, $resource, Config $config)
     {
-        return $this->write($path, new Stream($resource), $config, Util::getStreamSize($resource));
+        return $this->writeStream($path, $resource, $config);
     }
 
     /**
