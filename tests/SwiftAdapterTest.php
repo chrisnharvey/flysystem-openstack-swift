@@ -141,7 +141,6 @@ class SwiftAdapterTest extends TestCase
             'visibility' => null,
             'file_size' => 0,
             'extra_metadata' => [
-                'dirname' => 'name',
                 'type' => 'file',
             ],
         ];
@@ -328,7 +327,6 @@ class SwiftAdapterTest extends TestCase
             'visibility' => null,
             'file_size' => 0,
             'extra_metadata' => [
-                'dirname' => 'name',
                 'type' => 'file',
             ],
         ];

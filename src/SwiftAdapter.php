@@ -317,7 +317,6 @@ class SwiftAdapter implements FilesystemAdapter
             $object->contentType,
             [
                 'type' => 'file',
-                'dirname' => $this->prefixer->prefixPath($object->name),
             ]
         );
     }
