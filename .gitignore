@@ -1,13 +1,3 @@
 /composer.lock
 /vendor
-/build
-/docs/_build
-/.php_cs.cache
-/.php-cs-fixer.cache
-/examples/
-/.idea/
-/test.php
-/node_modules/
-/benchmarks/
-/.vscode/
-/.phpunit.result.cache
+.phpunit.result.cache

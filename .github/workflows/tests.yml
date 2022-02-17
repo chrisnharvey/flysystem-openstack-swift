@@ -15,15 +15,10 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                operating-system: [ubuntu-latest, windows-latest]
-                php-versions: ["7.4", "8.0"]
+                operating-system: [ubuntu-latest]
+                php-versions: ["7.4", "8.0", "8.1"]
 
         steps:
-            - name: Set git to use LF
-              run: |
-                  git config --global core.autocrlf false
-                  git config --global core.eol lf
-
             - name: Checkout
               uses: actions/checkout@v2.3.4
               with:
@@ -49,11 +44,5 @@ jobs:
             - name: Install dependencies
               run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-            - name: Run Grumphp
-              run: vendor/bin/grumphp run --tasks=phpunit
-
-            - name: Send Scrutinizer data
-              run: |
-                  wget https://scrutinizer-ci.com/ocular.phar
-                  php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml
-              continue-on-error: true
+            - name: Run PHPUnit
+              run: vendor/bin/phpunit

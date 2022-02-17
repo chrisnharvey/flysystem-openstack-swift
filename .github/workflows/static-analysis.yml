@@ -1,5 +1,3 @@
-# https://help.github.com/en/categories/automating-your-workflow-with-github-actions
-
 on:
     push:
         branches:
@@ -16,14 +14,9 @@ jobs:
             fail-fast: false
             matrix:
                 operating-system: [ubuntu-latest]
-                php-versions: ["7.4", "8.0"]
+                php-versions: ["7.4", "8.0", "8.1"]
 
         steps:
-            - name: Set git to use LF
-              run: |
-                  git config --global core.autocrlf false
-                  git config --global core.eol lf
-
             - name: Checkout
               uses: actions/checkout@v2.3.4
               with:
@@ -33,7 +26,6 @@ jobs:
               uses: shivammathur/setup-php@2.12.0
               with:
                   php-version: ${{ matrix.php-versions }}
-                  extensions: gd,mbstring,pcov,xdebug
                   tools: cs2pr
 
             - name: Get Composer Cache Directory
@@ -50,15 +42,5 @@ jobs:
             - name: Install dependencies
               run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-            - name: Run Grumphp
-              run: vendor/bin/grumphp run --tasks=psalm,phpstan -n
-
             - name: Send feedback on Github
-              if: ${{ failure() }}
-              run: |
-                  vendor/bin/phpstan analyse -l max --error-format=checkstyle src/ | cs2pr
-                  vendor/bin/psalm --output-format=github | cs2pr
-
-            - name: Send PSALM data
-              run: vendor/bin/psalm --shepherd --stats src/
-              continue-on-error: true
+              run: vendor/bin/psalm --output-format=github | cs2pr
