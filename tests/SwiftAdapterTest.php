@@ -114,6 +114,38 @@ class SwiftAdapterTest extends TestCase
         $this->assertTrue($fileExists);
     }
 
+    public function testDirectoryExists()
+    {
+        $generator = function () {
+            yield $this->object;
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello',
+            ])
+            ->andReturn($objects);
+
+        $generator = function () {
+            yield from [];
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'world',
+            ])
+            ->andReturn($objects);
+
+        $this->assertTrue($this->adapter->directoryExists('hello'));
+        $this->assertFalse($this->adapter->directoryExists('world'));
+    }
+
     public function testListContents()
     {
         $times = mt_rand(1, 10);
