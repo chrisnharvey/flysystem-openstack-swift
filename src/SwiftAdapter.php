@@ -213,8 +213,10 @@ class SwiftAdapter implements FilesystemAdapter
      */
     public function readStream(string $path)
     {
+        $options = ['requestOptions' => ['stream' => true]];
+
         try {
-            $resource = $this->getObject($path)->download()->detach();
+            $resource = $this->getObject($path)->download($options)->detach();
         } catch (BadResponseError $e) {
             throw UnableToReadFile::fromLocation($path, $e->getMessage());
         }
