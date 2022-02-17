@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": "^7.4",
+        "php": "^7.4 | ^8.0",
         "league/flysystem": "^2.0 | ^3.0",
         "php-opencloud/openstack": "^3.2",
         "guzzlehttp/psr7": "^2.0"
