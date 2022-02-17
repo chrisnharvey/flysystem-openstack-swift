@@ -30,9 +30,6 @@
         "phpunit/phpunit": ">= 5.5",
         "vimeo/psalm": "^4.20"
     },
-    "suggest": {
-        "nyholm/psr7": "A fast PHP7 implementation of PSR-7."
-    },
     "autoload": {
         "psr-4": {
             "Nimbusoft\\Flysystem\\OpenStack\\": "src/"
