@@ -1,153 +1,52 @@
 <?php
 
+/**
+ * For the full copyright and license information, please view
+ * the LICENSE file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
 use GuzzleHttp\Psr7\Stream;
 use League\Flysystem\Config;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\UnableToCreateDirectory;
+use League\Flysystem\UnableToDeleteDirectory;
+use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UnableToSetVisibility;
+use Mockery\LegacyMockInterface;
 use Nimbusoft\Flysystem\OpenStack\SwiftAdapter;
-use org\bovigo\vfs\content\LargeFileContent;
-use org\bovigo\vfs\vfsStream;
+use OpenStack\ObjectStore\v1\Models\Container;
+use OpenStack\ObjectStore\v1\Models\StorageObject;
 use PHPUnit\Framework\TestCase;
 
 class SwiftAdapterTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
+    private SwiftAdapter $adapter;
+
+    private Config $config;
+
+    private LegacyMockInterface $container;
+
+    private LegacyMockInterface $object;
 
     protected function setUp(): void
     {
         $this->config = new Config([]);
-        $this->container = Mockery::mock('OpenStack\ObjectStore\v1\Models\Container');
+        $this->container = Mockery::mock(Container::class);
         $this->container->name = 'container-name';
-        $this->object = Mockery::mock('OpenStack\ObjectStore\v1\Models\StorageObject');
+        $this->object = Mockery::mock(StorageObject::class);
+        // Object properties.
+        $this->object->name = 'name';
+        $this->object->contentType = 'text/html; charset=UTF-8';
+        $this->object->lastModified = new DateTimeImmutable('@1628624822');
+
         $this->adapter = new SwiftAdapter($this->container);
-        // for testing the large object support
-        $this->root = vfsStream::setUp('home');
     }
 
     protected function tearDown(): void
     {
         Mockery::close();
-    }
-
-    public function testWriteAndUpdate()
-    {
-        foreach (['write', 'update'] as $method) {
-            $this->container->shouldReceive('createObject')->once()->with([
-                'name' => 'hello',
-                'content' => 'world'
-            ])->andReturn($this->object);
-
-            $response = $this->adapter->$method('hello', 'world', $this->config);
-
-            $this->assertEquals($response, [
-                'type' => 'file',
-                'dirname' => null,
-                'path' => null,
-                'timestamp' =>  null,
-                'mimetype' => null,
-                'size' => null,
-            ]);
-        }
-    }
-
-    public function testWriteAndUpdateStream()
-    {
-        foreach (['writeStream', 'updateStream'] as $method) {
-            $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
-            $psrStream = new Stream($stream);
-
-            $this->container->shouldReceive('createObject')->once()->with([
-                'name' => 'hello',
-                'stream' => $psrStream
-            ])->andReturn($this->object);
-
-            $response = $this->adapter->$method('hello', $stream, $this->config);
-
-            $this->assertEquals($response, [
-                'type' => 'file',
-                'dirname' => null,
-                'path' => null,
-                'timestamp' =>  null,
-                'mimetype' => null,
-                'size' => null,
-            ]);
-        }
-    }
-
-    public function testWriteAndUpdateLargeStream()
-    {
-        foreach (['writeStream', 'updateStream'] as $method) {
-            // create a large file
-            $file = vfsStream::newFile('large.txt')
-                              ->withContent(LargeFileContent::withMegabytes(400))
-                              ->at($this->root);
-
-            $stream = fopen(vfsStream::url('home/large.txt'), 'r');
-
-            $psrStream = new Stream($stream);
-
-            $this->container->shouldReceive('createLargeObject')->once()->with([
-                'name' => 'hello',
-                'stream' => $psrStream,
-                'segmentSize' => 104857600,
-                'segmentContainer' => $this->container->name,
-            ])->andReturn($this->object);
-
-            $response = $this->adapter->$method('hello', $stream, $this->config);
-
-            $this->assertEquals($response, [
-                'type' => 'file',
-                'dirname' => null,
-                'path' => null,
-                'timestamp' =>  null,
-                'mimetype' => null,
-                'size' => null,
-            ]);
-        }
-    }
-
-    public function testWriteAndUpdateLargeStreamConfig()
-    {
-        $this->config->set('swiftLargeObjectThreshold', 104857600); // 100 MiB
-        $this->config->set('swiftSegmentSize', 52428800); // 50 MiB
-        $this->config->set('swiftSegmentContainer', 'segmentContainer');
-
-        foreach (['writeStream', 'updateStream'] as $method) {
-            // create a large file
-            $file = vfsStream::newFile('large.txt')
-                              ->withContent(LargeFileContent::withMegabytes(200))
-                              ->at($this->root);
-
-            $stream = fopen(vfsStream::url('home/large.txt'), 'r');
-
-            $psrStream = new Stream($stream);
-
-            $this->container->shouldReceive('createLargeObject')->once()->with([
-                'name' => 'hello',
-                'stream' => $psrStream,
-                'segmentSize' => 52428800, // 50 MiB
-                'segmentContainer' => 'segmentContainer',
-            ])->andReturn($this->object);
-
-            $response = $this->adapter->$method('hello', $stream, $this->config);
-        }
-    }
-
-    public function testRename()
-    {
-        $this->object->shouldReceive('retrieve')->once();
-        $this->object->shouldReceive('copy')->once()->with([
-            'destination' => '/container-name/world'
-        ]);
-        $this->object->shouldReceive('delete')->once();
-
-        $this->container->shouldReceive('getObject')
-            ->once()
-            ->with('hello')
-            ->andReturn($this->object);
-
-        $response = $this->adapter->rename('hello', 'world');
-
-        $this->assertTrue($response);
     }
 
     public function testDelete()
@@ -162,15 +61,21 @@ class SwiftAdapterTest extends TestCase
 
         $response = $this->adapter->delete('hello');
 
-        $this->assertTrue($response);
+        $this->assertNull($response);
     }
 
-    public function testDeleteDir()
+    public function testCreateDirectory()
     {
-        $times = rand(1, 10);
+        $this->expectException(UnableToCreateDirectory::class);
+        $this->adapter->createDirectory('hello', $this->config);
+    }
 
-        $generator = function() use ($times) {
-            for ($i = 1; $i <= $times; $i++) {
+    public function testDeleteDirectory()
+    {
+        $times = mt_rand(1, 10);
+
+        $generator = function () use ($times) {
+            for ($i = 1; $i <= $times; ++$i) {
                 yield $this->object;
             }
         };
@@ -180,51 +85,98 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('listObjects')
             ->once()
             ->with([
-                'prefix' => 'hello/'
+                'prefix' => 'hello/',
             ])
             ->andReturn($objects);
 
         $this->object->shouldReceive('delete')->times($times);
 
-        $response = $this->adapter->deleteDir('hello');
+        $response = $this->adapter->deleteDirectory('hello');
 
-        $this->assertTrue($response);
+        $this->assertNull($response);
     }
 
-    public function testCreateDir()
+    public function testDeleteDirectoryRoot()
     {
-        $dir = $this->adapter->createDir('hello', $this->config);
-
-        $this->assertEquals($dir, [
-            'path' => 'hello'
-        ]);
+        $this->expectException(UnableToDeleteDirectory::class);
+        $this->adapter->deleteDirectory('');
     }
 
-    public function testHas()
+    public function testFileExists()
     {
-        $this->object->shouldReceive('retrieve')->once();
-
-        $this->container
-            ->shouldReceive('getObject')
+        $this->container->shouldReceive('objectExists')
             ->once()
+            ->with('hello')
+            ->andReturn(true);
+
+        $fileExists = $this->adapter->fileExists('hello');
+
+        $this->assertTrue($fileExists);
+    }
+
+    public function testListContents()
+    {
+        $times = mt_rand(1, 10);
+
+        $generator = function () use ($times) {
+            for ($i = 1; $i <= $times; ++$i) {
+                yield $this->object;
+            }
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello',
+            ])
+            ->andReturn($objects);
+
+        $expect = [
+            'path' => 'name',
+            'type' => 'file',
+            'last_modified' => 1628624822,
+            'mime_type' => 'text/html; charset=UTF-8',
+            'visibility' => null,
+            'file_size' => 0,
+            'extra_metadata' => [
+                'dirname' => 'name',
+                'type' => 'file',
+            ],
+        ];
+
+        $contents = $this->adapter->listContents('hello', false);
+        $count = 0;
+
+        foreach ($contents as $file) {
+            $this->assertEquals($expect, $file->jsonSerialize());
+            $count += 1;
+        }
+
+        $this->assertEquals($times, $count);
+    }
+
+    public function testMove()
+    {
+        $this->object->shouldReceive('copy')->once()->with([
+            'destination' => '/container-name/world',
+        ]);
+        $this->object->shouldReceive('delete')->once();
+
+        $this->container->shouldReceive('getObject')
+            ->twice()
             ->with('hello')
             ->andReturn($this->object);
 
-        $has = $this->adapter->has('hello');
+        $response = $this->adapter->move('hello', 'world', $this->config);
 
-        $this->assertEquals($has, [
-            'type' => 'file',
-            'dirname' => null,
-            'path' => null,
-            'timestamp' =>  null,
-            'mimetype' => null,
-            'size' => null,
-        ]);
+        $this->assertNull($response);
     }
 
     public function testRead()
     {
-        $stream = Mockery::mock('GuzzleHttp\Psr7\Stream');
+        $stream = Mockery::mock(Stream::class);
         $stream->shouldReceive('close');
         $stream->shouldReceive('rewind');
         $stream->shouldReceive('getContents')->once()->andReturn('hello world');
@@ -234,130 +186,186 @@ class SwiftAdapterTest extends TestCase
             ->once()
             ->andReturn($stream);
 
-        $this->container
-            ->shouldReceive('getObject')
+        $this->container->shouldReceive('getObject')
             ->once()
             ->with('hello')
             ->andReturn($this->object);
 
         $data = $this->adapter->read('hello');
 
-        $this->assertEquals($data, [
-            'type' => 'file',
-            'dirname' => null,
-            'path' => null,
-            'timestamp' =>  null,
-            'mimetype' => null,
-            'size' => null,
-            'contents' => 'hello world'
-        ]);
+        $this->assertEquals($data, 'hello world');
     }
 
     public function testReadStream()
     {
-        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
-        $psrStream = new Stream($stream);
+        $resource = fopen('data://text/plain;base64,' . base64_encode('world'), 'rb');
+        $stream = new Stream($resource);
 
         $this->object->shouldReceive('retrieve')->once();
         $this->object->shouldReceive('download')
             ->once()
-            ->andReturn($psrStream);
+            ->andReturn($stream);
 
-        $this->container
-            ->shouldReceive('getObject')
+        $this->container->shouldReceive('getObject')
             ->once()
             ->with('hello')
             ->andReturn($this->object);
 
         $data = $this->adapter->readStream('hello');
 
-        $this->assertEquals('world', stream_get_contents($data['stream']));
+        $this->assertEquals('world', stream_get_contents($data));
     }
 
-    public function testListContents()
+    public function testWrite()
     {
-        $times = rand(1, 10);
-
-        $generator = function() use ($times) {
-            for ($i = 1; $i <= $times; $i++) {
-                yield $this->object;
-            }
-        };
-
-        $objects = $generator();
-
-        $this->container->shouldReceive('listObjects')
+        $this->container->shouldReceive('createObject')
             ->once()
             ->with([
-                'prefix' => 'hello'
+                'name' => 'hello',
+                'content' => 'world',
             ])
-            ->andReturn($objects);
+            ->andReturn($this->object);
 
-        $contents = $this->adapter->listContents('hello');
+        $response = $this->adapter->write('hello', 'world', $this->config);
 
-        for ($i = 1; $i <= $times; $i++) {
-            $data[] = [
-                'type' => 'file',
-                'dirname' => null,
-                'path' => null,
-                'timestamp' =>  null,
-                'mimetype' => null,
-                'size' => null,
-            ];
-        }
+        $this->assertNull($response);
+    }
 
-        $this->assertEquals($data, $contents);
+    public function testWriteStream()
+    {
+        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+
+        $this->adapter = new SwiftAdapterStub($this->container);
+        $this->adapter->streamMock = Mockery::mock(Stream::class);
+
+        $this->adapter->streamMock
+            ->shouldReceive('getSize')
+            ->once()
+            ->andReturn(104857600); // 100 MB
+
+        $this->container->shouldReceive('createObject')->once()->with([
+            'name' => 'hello',
+            'stream' => $this->adapter->streamMock,
+        ])->andReturn($this->object);
+
+        $response = $this->adapter->writeStream('hello', $stream, $this->config);
+
+        $this->assertNull($response);
+    }
+
+    public function testWriteLargeStream()
+    {
+        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+
+        $this->adapter = new SwiftAdapterStub($this->container);
+        $this->adapter->streamMock = Mockery::mock(Stream::class);
+
+        $this->adapter->streamMock
+            ->shouldReceive('getSize')
+            ->once()
+            ->andReturn(419430400); // 400 MB
+
+        $this->container->shouldReceive('createLargeObject')
+            ->once()
+            ->with([
+                'name' => 'hello',
+                'stream' => $this->adapter->streamMock,
+                'segmentSize' => 104857600, // 100 MiB
+                'segmentContainer' => 'container-name',
+            ])
+            ->andReturn($this->object);
+
+        $response = $this->adapter->writeStream('hello', $stream, $this->config);
+
+        $this->assertNull($response);
+    }
+
+    public function testWriteLargeStreamConfig()
+    {
+        $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');
+
+        $config = $this->config
+            ->extend(['swiftLargeObjectThreshold' => 104857600]) // 100 MiB
+            ->extend(['swiftSegmentSize' => 52428800]) // 50 MiB
+            ->extend(['swiftSegmentContainer' => 'segment-container']);
+
+        $this->adapter = new SwiftAdapterStub($this->container);
+        $this->adapter->streamMock = Mockery::mock(Stream::class);
+
+        $this->adapter->streamMock
+            ->shouldReceive('getSize')
+            ->once()
+            ->andReturn(209715200); // 200 MB
+
+        $this->container->shouldReceive('createLargeObject')
+            ->once()
+            ->with([
+                'name' => 'hello',
+                'stream' => $this->adapter->streamMock,
+                'segmentSize' => 52428800, // 50 MiB
+                'segmentContainer' => 'segment-container',
+            ])
+            ->andReturn($this->object);
+
+        $response = $this->adapter->writeStream('hello', $stream, $config);
+
+        $this->assertNull($response);
     }
 
     public function testMetadataMethods()
     {
         $methods = [
-            'getMetadata',
-            'getSize',
-            'getMimetype',
-            'getTimestamp'
+            'fileSize',
+            'mimeType',
+            'lastModified'
+        ];
+
+        $expect = [
+            'path' => 'name',
+            'type' => 'file',
+            'last_modified' => 1628624822,
+            'mime_type' => 'text/html; charset=UTF-8',
+            'visibility' => null,
+            'file_size' => 0,
+            'extra_metadata' => [
+                'dirname' => 'name',
+                'type' => 'file',
+            ],
         ];
 
         foreach ($methods as $method) {
             $this->object->shouldReceive('retrieve')->once();
-            $this->object->name = 'hello/world';
-            $this->object->lastModified = date('Y-m-d');
-            $this->object->contentType = 'mimetype';
-            $this->object->contentLength = 1234;
 
-            $this->container
-                ->shouldReceive('getObject')
+            $this->container->shouldReceive('getObject')
                 ->once()
                 ->with('hello')
                 ->andReturn($this->object);
 
             $metadata = $this->adapter->$method('hello');
 
-            $this->assertEquals($metadata, [
-                'type' => 'file',
-                'dirname' => 'hello',
-                'path' => 'hello/world',
-                'timestamp' =>  strtotime(date('Y-m-d')),
-                'mimetype' => 'mimetype',
-                'size' => 1234,
-            ]);
+            $this->assertEquals($expect, $metadata->jsonSerialize());
         }
     }
 
-    public function testGetTimestampDateTimeImmutable()
+    public function testSetVisibility()
     {
-        $time = new \DateTimeImmutable(date('Y-m-d'));
-        $this->object->shouldReceive('retrieve')->once();
-        $this->object->lastModified = $time;
+        $this->expectException(UnableToSetVisibility::class);
+        $this->adapter->setVisibility('hello', 'public');
+    }
 
-        $this->container
-            ->shouldReceive('getObject')
-            ->once()
-            ->with('hello')
-            ->andReturn($this->object);
+    public function testVisibility()
+    {
+        $this->expectException(UnableToRetrieveMetadata::class);
+        $this->adapter->visibility('hello');
+    }
+}
 
-        $metadata = $this->adapter->getTimestamp('hello');
+class SwiftAdapterStub extends SwiftAdapter
+{
+    public $streamMock;
 
-        $this->assertEquals($time->getTimestamp(), $metadata['timestamp']);
+    protected function getStreamFromResource($resource): Stream
+    {
+        return $this->streamMock;
     }
 }

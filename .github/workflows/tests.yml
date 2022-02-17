@@ -1,0 +1,48 @@
+# https://help.github.com/en/categories/automating-your-workflow-with-github-actions
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+
+name: "Unit tests"
+
+jobs:
+    run:
+        name: "Unit Tests"
+        runs-on: ${{ matrix.operating-system }}
+        strategy:
+            fail-fast: false
+            matrix:
+                operating-system: [ubuntu-latest]
+                php-versions: ["7.4", "8.0", "8.1"]
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2.3.4
+              with:
+                  fetch-depth: 1
+
+            - name: Install PHP
+              uses: shivammathur/setup-php@2.12.0
+              with:
+                  php-version: ${{ matrix.php-versions }}
+                  extensions: gd,mbstring,pcov,xdebug
+
+            - name: Get Composer Cache Directory
+              id: composer-cache
+              run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+            - name: Cache dependencies
+              uses: actions/cache@v2.1.6
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+                  restore-keys: ${{ runner.os }}-composer-
+
+            - name: Install dependencies
+              run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+            - name: Run PHPUnit
+              run: vendor/bin/phpunit
