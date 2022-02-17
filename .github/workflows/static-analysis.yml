@@ -26,7 +26,6 @@ jobs:
               uses: shivammathur/setup-php@2.12.0
               with:
                   php-version: ${{ matrix.php-versions }}
-                  tools: cs2pr
 
             - name: Get Composer Cache Directory
               id: composer-cache
@@ -43,4 +42,4 @@ jobs:
               run: composer install --no-progress --prefer-dist --optimize-autoloader
 
             - name: Send feedback on Github
-              run: vendor/bin/psalm --output-format=github | cs2pr
+              run: vendor/bin/psalm --output-format=github
