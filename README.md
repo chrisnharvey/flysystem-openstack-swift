@@ -36,7 +36,7 @@ $flysystem = new League\Flysystem\Filesystem($adapter);
 
 ## Configuration
 
-The Swift adapter allows you to configure the behavior of uploading [large objects](https://php-opencloudopenstack.readthedocs.io/en/latest/services/object-store/v1/objects.html#create-a-large-object-over-5gb). You can set the following configuration options:
+The Swift adapter allows you to configure the behavior of uploading [large objects](https://php-opencloudopenstack.readthedocs.io/en/latest/services/object-store/v1/objects.html#create-a-large-object-over-5gb) with `writeStream()`. You can set the following configuration options:
 
 - `swiftLargeObjectThreshold`: Size of the file in bytes when to switch over to the large object upload procedure. Default is 300 MiB. The maximum allowed size of regular objects is 5 GiB.
 - `swiftSegmentSize`: Size of individual segments or chunks that the large file is split up into. Default is 100 MiB. Should be below 5 GiB.
