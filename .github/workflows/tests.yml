@@ -17,6 +17,7 @@ jobs:
             matrix:
                 operating-system: [ubuntu-latest]
                 php-versions: ["8.0", "8.1"]
+                flysystem-versions: ["^2.0", "^3.0"]
 
         steps:
             - name: Checkout
@@ -43,6 +44,9 @@ jobs:
 
             - name: Install dependencies
               run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+            - name: Install Flysystem version
+              run: composer require league/flysystem:${{ matrix.flysystem-versions }} --no-progress --prefer-dist --optimize-autoloader
 
             - name: Run PHPUnit
               run: vendor/bin/phpunit
