@@ -183,7 +183,11 @@ class SwiftAdapter implements FilesystemAdapter
         try {
             return $this->listContents($path, false)->valid();
         } catch (Throwable $e) {
-            throw UnableToCheckDirectoryExistence::forLocation($path, $e);
+            if (class_exists(UnableToCheckDirectoryExistence::class)) {
+                throw UnableToCheckDirectoryExistence::forLocation($path, $e);
+            }
+
+            throw UnableToCheckFileExistence::forLocation($path, $e);
         }
     }
 
