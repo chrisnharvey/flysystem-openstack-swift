@@ -16,6 +16,7 @@ use League\Flysystem\Config;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\PathPrefixer;
+use League\Flysystem\UnableToCheckDirectoryExistence;
 use League\Flysystem\UnableToCheckFileExistence;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
@@ -33,6 +34,7 @@ use League\MimeTypeDetection\MimeTypeDetector;
 use OpenStack\Common\Error\BadResponseError;
 use OpenStack\ObjectStore\v1\Models\Container;
 use OpenStack\ObjectStore\v1\Models\StorageObject;
+use Throwable;
 
 class SwiftAdapter implements FilesystemAdapter
 {
@@ -170,6 +172,18 @@ class SwiftAdapter implements FilesystemAdapter
             return $this->container->objectExists($this->prefixer->prefixPath($path));
         } catch (BadResponseError $e) {
             throw UnableToCheckFileExistence::forLocation($path, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function directoryExists(string $path): bool
+    {
+        try {
+            return $this->listContents($path, false)->valid();
+        } catch (Throwable $e) {
+            throw UnableToCheckDirectoryExistence::forLocation($path, $e);
         }
     }
 
