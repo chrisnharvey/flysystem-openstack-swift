@@ -125,7 +125,8 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('listObjects')
             ->once()
             ->with([
-                'prefix' => 'hello',
+                'prefix' => 'hello/',
+                'delimiter' => '/',
             ])
             ->andReturn($objects);
 
@@ -138,7 +139,8 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('listObjects')
             ->once()
             ->with([
-                'prefix' => 'world',
+                'prefix' => 'world/',
+                'delimiter' => '/',
             ])
             ->andReturn($objects);
 
@@ -161,7 +163,8 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('listObjects')
             ->once()
             ->with([
-                'prefix' => 'hello',
+                'prefix' => 'hello/',
+                'delimiter' => '/',
             ])
             ->andReturn($objects);
 
@@ -172,9 +175,7 @@ class SwiftAdapterTest extends TestCase
             'mime_type' => 'text/html; charset=UTF-8',
             'visibility' => null,
             'file_size' => 0,
-            'extra_metadata' => [
-                'type' => 'file',
-            ],
+            'extra_metadata' => [],
         ];
 
         $contents = $this->adapter->listContents('hello', false);
@@ -186,6 +187,34 @@ class SwiftAdapterTest extends TestCase
         }
 
         $this->assertEquals($times, $count);
+    }
+
+    public function testListContentsPseudoDirectory()
+    {
+        $object = Mockery::mock(StorageObject::class);
+        $object->name = 'name/';
+        $generator = function () use ($object) {
+            yield $object;
+        };
+        $objects = $generator();
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello/',
+                'delimiter' => '/',
+            ])
+            ->andReturn($objects);
+
+        $expect = [
+            'path' => 'name',
+            'type' => 'dir',
+            'visibility' => null,
+            'extra_metadata' => [],
+            'last_modified' => null,
+        ];
+
+        $contents = iterator_to_array($this->adapter->listContents('hello', false));
+        $this->assertEquals($expect, $contents[0]->jsonSerialize());
     }
 
     public function testMove()
@@ -358,9 +387,7 @@ class SwiftAdapterTest extends TestCase
             'mime_type' => 'text/html; charset=UTF-8',
             'visibility' => null,
             'file_size' => 0,
-            'extra_metadata' => [
-                'type' => 'file',
-            ],
+            'extra_metadata' => [],
         ];
 
         foreach ($methods as $method) {

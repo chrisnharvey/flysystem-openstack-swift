@@ -13,6 +13,7 @@ use DateTimeInterface;
 use GuzzleHttp\Psr7\Stream;
 use InvalidArgumentException;
 use League\Flysystem\Config;
+use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\PathPrefixer;
@@ -233,10 +234,13 @@ class SwiftAdapter implements FilesystemAdapter
      */
     public function listContents(string $path, bool $deep): iterable
     {
-        $location = $this->prefixer->prefixPath($path);
+        $location = $this->prefixer->prefixDirectoryPath($path);
 
+        // Fetch objects with preudo-directory support. See:
+        // https://docs.openstack.org/swift/latest/api/pseudo-hierarchical-folders-directories.html
         $objectList = $this->container->listObjects([
             'prefix' => $location,
+            'delimiter' => '/',
         ]);
 
         foreach ($objectList as $object) {
@@ -319,14 +323,21 @@ class SwiftAdapter implements FilesystemAdapter
         return $object;
     }
 
-    protected function normalizeObject(StorageObject $object): FileAttributes
+    protected function normalizeObject(StorageObject $object): FileAttributes|DirectoryAttributes
     {
-        $name = $this->prefixer->stripPrefix($object->name);
+        $name = $this->prefixer->stripDirectoryPrefix($object->name);
 
         if ($object->lastModified instanceof DateTimeInterface) {
             $timestamp = $object->lastModified->getTimestamp();
-        } else {
+        } elseif (is_string($object->lastModified)) {
             $timestamp = strtotime($object->lastModified);
+        } else {
+            $timestamp = null;
+        }
+
+        // Check if the object name ends with a slash. This is a pseudo-directory.
+        if (substr_compare($object->name, '/', -1) === 0) {
+            return new DirectoryAttributes($name);
         }
 
         return new FileAttributes(
@@ -334,10 +345,7 @@ class SwiftAdapter implements FilesystemAdapter
             (int) $object->contentLength,
             null,
             $timestamp,
-            $object->contentType,
-            [
-                'type' => 'file',
-            ]
+            $object->contentType
         );
     }
 
