@@ -191,10 +191,9 @@ class SwiftAdapterTest extends TestCase
 
     public function testListContentsPseudoDirectory()
     {
-        $object = Mockery::mock(StorageObject::class);
-        $object->name = 'name/';
-        $generator = function () use ($object) {
-            yield $object;
+        $this->object->name = 'name/';
+        $generator = function () {
+            yield $this->object;
         };
         $objects = $generator();
         $this->container->shouldReceive('listObjects')
@@ -215,6 +214,79 @@ class SwiftAdapterTest extends TestCase
 
         $contents = iterator_to_array($this->adapter->listContents('hello', false));
         $this->assertEquals($expect, $contents[0]->jsonSerialize());
+    }
+
+    public function testListContentsDeep()
+    {
+        $times = mt_rand(1, 10);
+
+        $generator = function () {
+            yield $this->object;
+        };
+
+        $objects = $generator();
+
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'hello/',
+            ])
+            ->andReturn($objects);
+
+        $expect = [
+            'path' => 'name',
+            'type' => 'file',
+            'last_modified' => 1628624822,
+            'mime_type' => 'text/html; charset=UTF-8',
+            'visibility' => null,
+            'file_size' => 0,
+            'extra_metadata' => [],
+        ];
+
+        $contents = $this->adapter->listContents('hello', true);
+
+        foreach ($contents as $file) {
+            $this->assertEquals($expect, $file->jsonSerialize());
+        }
+    }
+
+    public function testListContentsPseudoDirectoryDeep()
+    {
+        $this->object->name = 'pseudo/directory/name';
+        $generator = function () {
+            yield $this->object;
+        };
+        $objects = $generator();
+        $this->container->shouldReceive('listObjects')
+            ->once()
+            ->with([
+                'prefix' => 'pseudo/',
+            ])
+            ->andReturn($objects);
+
+        $expect = [
+            [
+                'path' => 'pseudo/directory',
+                'type' => 'dir',
+                'visibility' => null,
+                'extra_metadata' => [],
+                'last_modified' => null,
+            ],
+            [
+                'path' => 'pseudo/directory/name',
+                'type' => 'file',
+                'last_modified' => 1628624822,
+                'mime_type' => 'text/html; charset=UTF-8',
+                'visibility' => null,
+                'file_size' => 0,
+                'extra_metadata' => [],
+            ],
+        ];
+
+        $contents = $this->adapter->listContents('pseudo', true);
+        foreach ($contents as $index => $value) {
+            $this->assertEquals($expect[$index], $value->jsonSerialize());
+        }
     }
 
     public function testMove()
