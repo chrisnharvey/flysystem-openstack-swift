@@ -283,10 +283,17 @@ class SwiftAdapterTest extends TestCase
             ->with([
                 'name' => 'hello',
                 'content' => 'world',
+                'contentType' => 'text/plain',
+                'detectContentType' => true,
             ])
             ->andReturn($this->object);
 
-        $response = $this->adapter->write('hello', 'world', $this->config);
+        $config = $this->config->extend([
+            'contentType' => 'text/plain',
+            'detectContentType' => true,
+        ]);
+
+        $response = $this->adapter->write('hello', 'world', $config);
 
         $this->assertNull($response);
     }
@@ -306,9 +313,16 @@ class SwiftAdapterTest extends TestCase
         $this->container->shouldReceive('createObject')->once()->with([
             'name' => 'hello',
             'stream' => $this->adapter->streamMock,
+            'contentType' => 'text/plain',
+            'detectContentType' => true,
         ])->andReturn($this->object);
 
-        $response = $this->adapter->writeStream('hello', $stream, $this->config);
+        $config = $this->config->extend([
+            'contentType' => 'text/plain',
+            'detectContentType' => true,
+        ]);
+
+        $response = $this->adapter->writeStream('hello', $stream, $config);
 
         $this->assertNull($response);
     }
