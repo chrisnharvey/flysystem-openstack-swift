@@ -236,12 +236,23 @@ class SwiftAdapter implements FilesystemAdapter
     {
         $location = $this->prefixer->prefixDirectoryPath($path);
 
-        // Fetch objects with preudo-directory support. See:
-        // https://docs.openstack.org/swift/latest/api/pseudo-hierarchical-folders-directories.html
-        $objectList = $this->container->listObjects([
-            'prefix' => $location,
-            'delimiter' => '/',
-        ]);
+        $config = ['prefix' => $location];
+
+        // Fetch objects with preudo-directory support. This limits the returned list of
+        // objects to only those that are direct children of the queried location.
+        // See: https://docs.openstack.org/swift/latest/api/pseudo-hierarchical-folders-directories.html
+        if (!$deep) {
+            $config['delimiter'] = '/';
+        }
+
+        $objectList = $this->container->listObjects($config);
+
+        // Swift only returns directories when the delimiter is used (see above).
+        // But this does not recurse the directory structure. In this case we have
+        // to generate the pseudo directories from the list of objects ourselves.
+        if ($deep) {
+            $objectList = $this->augmentPseudoDirectories($location, $objectList);
+        }
 
         foreach ($objectList as $object) {
             yield $this->normalizeObject($object);
@@ -374,5 +385,44 @@ class SwiftAdapter implements FilesystemAdapter
     protected function getStreamFromResource($resource): Stream
     {
         return new Stream($resource);
+    }
+
+    /**
+     * Adds pseudo-directories to a list of storage objects.
+     *
+     * @param string $location
+     * @param iterable $objectList
+     *
+     * @return \Generator
+     */
+    protected function augmentPseudoDirectories(string $location, iterable $objectList): \Generator
+    {
+        $processedDirectories = [];
+        $prefixLength = strlen($location);
+
+        foreach ($objectList as $object) {
+            // Strip the prefix from the path. We only want to augment directories from
+            // the prefix down.
+            $path = explode('/', substr($object->name, $prefixLength));
+            $filename = array_pop($path);
+            $fullPath = '';
+            foreach ($path as $part) {
+                $fullPath .= $part.'/';
+                if (!array_key_exists($fullPath, $processedDirectories)) {
+                    $processedDirectories[$fullPath] = null;
+                    $dirObject = clone $object;
+                    // Re-apply the prefix here.
+                    $dirObject->name = $location.$fullPath;
+                    $dirObject->hash = null;
+                    $dirObject->contentType = null;
+                    $dirObject->contentLength = null;
+                    $dirObject->lastModified = null;
+
+                    yield $dirObject;
+                }
+            }
+
+            yield $object;
+        }
     }
 }
