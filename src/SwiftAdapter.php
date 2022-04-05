@@ -305,7 +305,17 @@ class SwiftAdapter implements FilesystemAdapter
 
     protected function getWriteData(string $path, Config $config): array
     {
-        return ['name' => $path];
+        $data = ['name' => $path];
+
+        if ($contentType = $config->get('contentType')) {
+            $data['contentType'] = $contentType;
+        }
+
+        if ($detectContentType = $config->get('detectContentType')) {
+            $data['detectContentType'] = $detectContentType;
+        }
+
+        return $data;
     }
 
     protected function getObjectInstance(string $path): StorageObject
