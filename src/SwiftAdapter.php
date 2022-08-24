@@ -344,7 +344,10 @@ class SwiftAdapter implements FilesystemAdapter
         return $object;
     }
 
-    protected function normalizeObject(StorageObject $object): FileAttributes|DirectoryAttributes
+    /**
+     * @return FileAttributes|DirectoryAttributes
+     */
+    protected function normalizeObject(StorageObject $object)
     {
         $name = $this->prefixer->stripDirectoryPrefix($object->name);
 
