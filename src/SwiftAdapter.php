@@ -82,7 +82,13 @@ class SwiftAdapter implements FilesystemAdapter
             throw new InvalidArgumentException('The $contents parameter must be a resource.');
         }
 
-        $stream = $this->getStreamFromResource($contents);
+        $options = [];
+        $size = $config->get('size');
+        if (null !== $size) {
+            $options['size'] = $size;
+        }
+        $stream = $this->getStreamFromResource($contents, $options);
+
         $path = $this->prefixer->prefixPath($path);
         $data = $this->getWriteData($path, $config);
         $data['stream'] = $stream;
@@ -385,9 +391,9 @@ class SwiftAdapter implements FilesystemAdapter
     /**
      * @param resource $resource
      */
-    protected function getStreamFromResource($resource): Stream
+    protected function getStreamFromResource($resource, array $options = []): Stream
     {
-        return new Stream($resource);
+        return new Stream($resource, $options);
     }
 
     /**
