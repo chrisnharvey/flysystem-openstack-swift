@@ -507,7 +507,7 @@ class SwiftAdapterStub extends SwiftAdapter
 {
     public $streamMock;
 
-    protected function getStreamFromResource($resource): Stream
+    protected function getStreamFromResource($resource, array $options = []): Stream
     {
         return $this->streamMock;
     }
