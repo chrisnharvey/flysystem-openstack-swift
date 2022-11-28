@@ -69,7 +69,7 @@ class SwiftAdapter implements FilesystemAdapter
         try {
             $this->container->createObject($data);
         } catch (BadResponseError $e) {
-            throw UnableToWriteFile::atLocation($path);
+            throw UnableToWriteFile::atLocation($path, $e->getMessage(), $e);
         }
     }
 
@@ -105,7 +105,7 @@ class SwiftAdapter implements FilesystemAdapter
                 $this->container->createObject($data);
             }
         } catch (BadResponseError $e) {
-            throw UnableToWriteFile::atLocation($path);
+            throw UnableToWriteFile::atLocation($path, $e->getMessage(), $e);
         }
     }
 
