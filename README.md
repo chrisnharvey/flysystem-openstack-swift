@@ -42,6 +42,10 @@ The Swift adapter allows you to configure the behavior of uploading [large objec
 - `swiftSegmentSize`: Size of individual segments or chunks that the large file is split up into. Default is 100 MiB. Should be below 5 GiB.
 - `swiftSegmentContainer`: Name of the Swift container to store the large object segments to. Default is the same container that stores the regular files.
 
+One can also set the object expiration time via either property:
+- `deleteAfter`: Specifies the number of seconds after which the object is removed. Internally, the Object Storage system stores this value in the X-Delete-At metadata item.
+- `deleteAt`: The certain date, in the UNIX Epoch timestamp format, when the object will be removed.
+
 Example:
 
 ```php
