@@ -370,6 +370,47 @@ class SwiftAdapterTest extends TestCase
         $this->assertNull($response);
     }
 
+    public function testWriteDeleteAt()
+    {
+        $time = time() + 3600;
+        $this->container->shouldReceive('createObject')
+            ->once()
+            ->with([
+                'name' => 'hello',
+                'content' => 'world',
+                'deleteAt' => $time,
+            ])
+            ->andReturn($this->object);
+
+        $config = $this->config->extend([
+            'deleteAt' => $time
+        ]);
+
+        $response = $this->adapter->write('hello', 'world', $config);
+
+        $this->assertNull($response);
+    }
+
+    public function testWriteDeleteAfter()
+    {
+        $this->container->shouldReceive('createObject')
+            ->once()
+            ->with([
+                'name' => 'hello',
+                'content' => 'world',
+                'deleteAfter' => 3600,
+            ])
+            ->andReturn($this->object);
+
+        $config = $this->config->extend([
+            'deleteAfter' => 3600
+        ]);
+
+        $response = $this->adapter->write('hello', 'world', $config);
+
+        $this->assertNull($response);
+    }
+
     public function testWriteStream()
     {
         $stream = fopen('data://text/plain;base64,'.base64_encode('world'), 'r');

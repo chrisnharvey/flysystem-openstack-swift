@@ -326,6 +326,14 @@ class SwiftAdapter implements FilesystemAdapter
             $data['detectContentType'] = $detectContentType;
         }
 
+        if ($deleteAt = $config->get('deleteAt')) {
+            $data['deleteAt'] = $deleteAt;
+        }
+
+        if ($deleteAfter = $config->get('deleteAfter')) {
+            $data['deleteAfter'] = $deleteAfter;
+        }
+
         return $data;
     }
 
