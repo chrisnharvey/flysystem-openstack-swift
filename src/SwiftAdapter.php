@@ -332,6 +332,14 @@ class SwiftAdapter implements FilesystemAdapter
             $data['detectContentType'] = $detectContentType;
         }
 
+        if ($deleteAt = $config->get('deleteAt')) {
+            $data['deleteAt'] = $deleteAt;
+        }
+
+        if ($deleteAfter = $config->get('deleteAfter')) {
+            $data['deleteAfter'] = $deleteAfter;
+        }
+
         return $data;
     }
 
@@ -412,7 +420,7 @@ class SwiftAdapter implements FilesystemAdapter
         foreach ($objectList as $object) {
             // Strip the prefix from the path. We only want to augment directories from
             // the prefix down.
-            $path = explode('/', substr($object->name, $prefixLength));
+            $path = explode('/', (string)substr($object->name, $prefixLength));
             $filename = array_pop($path);
             $fullPath = '';
             foreach ($path as $part) {
